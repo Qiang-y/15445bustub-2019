@@ -23,12 +23,15 @@ namespace bustub {
 
 /**
  * ClockReplacer implements the clock replacement policy, which approximates the Least Recently Used policy.
+ * ClockReplacer 实现时钟替换策略，该策略近似于最近最少使用策略。
  */
 class ClockReplacer : public Replacer {
  public:
   /**
    * Create a new ClockReplacer.
    * @param num_pages the maximum number of pages the ClockReplacer will be required to store
+   *
+   * @param num_pages ClockReplacer 需要存储的最大页数
    */
   explicit ClockReplacer(size_t num_pages);
 
@@ -47,6 +50,19 @@ class ClockReplacer : public Replacer {
 
  private:
   // TODO(student): implement me!
+  std::mutex latch_;
+
+  size_t clock_point_;
+
+  std::vector<std::pair<frame_id_t, bool>> clock_;
+
+  // 最多可容下的 frame 数量
+  std::size_t clock_max_size_;
+
+  // 当前使用（可移除）的 frame 数量
+  std::size_t clock_used_size_;
+
+
 };
 
 }  // namespace bustub

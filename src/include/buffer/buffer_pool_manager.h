@@ -29,6 +29,7 @@ namespace bustub {
 
 /**
  * BufferPoolManager reads disk pages to and from its internal buffer pool.
+ * BufferPoolManager 从其内部缓冲池读取磁盘页。
  */
 class BufferPoolManager {
  public:
