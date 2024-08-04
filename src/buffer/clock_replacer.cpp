@@ -29,8 +29,11 @@ auto ClockReplacer::Victim(frame_id_t *frame_id) -> bool {
 
   if(clock_used_size_ == 0)
     return false;
+  if(clock_point_ >= clock_used_size_)
+    clock_point_ = 0;
   while(true) {
-    clock_point_ = (clock_point_ + 1) % clock_used_size_;
+    // clock_point_ = (clock_point_ + 1) % clock_used_size_;
+      std::cout << "clock_point: " << clock_point_ << std::endl;
     if(clock_[clock_point_].second == true) {
       clock_[clock_point_].second = false;
     }
@@ -39,13 +42,14 @@ auto ClockReplacer::Victim(frame_id_t *frame_id) -> bool {
       this->clock_.erase(clock_.begin() + clock_point_);
       clock_used_size_-=1;
       // std::cout << "clock_point_ before = " << clock_point_;
-      clock_point_ = (clock_point_ - 1 );                     // 这里不能写成clock_point_ = (clock_point_ - 1 ) % clock_used_size_ ， 因为-1(size_t的max)%任何都是0
+      // clock_point_ = (clock_point_ - 1 );                     // 这里不能写成clock_point_ = (clock_point_ - 1 ) % clock_used_size_ ， 因为-1(size_t的max)%任何都是0
       // std::cout << "clock_point_ after = " << clock_point_;
-      if(clock_point_ > clock_used_size_ || clock_used_size_ == 0)
+      if(clock_point_ >= clock_used_size_)  //防止出界
         clock_point_ = clock_used_size_ - 1;
       // std::cout << "clock_point_ = " << clock_point_ << "   clock_used_size_ = " << clock_used_size_ << std::endl;
       return true;
     }
+    clock_point_ = (clock_point_ + 1) % clock_used_size_;
   }
 }
 
@@ -76,13 +80,15 @@ void ClockReplacer::Unpin(frame_id_t frame_id) {
   if(this->clock_used_size_ < this->clock_max_size_) {
     this->clock_.emplace_back(std::pair<frame_id_t, bool>(frame_id, true));
     this->clock_used_size_+=1;
-    this->clock_point_ = (this->clock_point_ + 1) % this->clock_used_size_;
+    // this->clock_point_ = (this->clock_point_ + 1) % this->clock_used_size_;    //        此处不应该移动指针
   }
   else{
     // 替换
     frame_id_t temp_can_frame_id;
     Victim(&temp_can_frame_id);
     this->clock_.insert(clock_.begin() + clock_point_, std::pair<frame_id_t, bool>(frame_id, true));
+    clock_used_size_ += 1;
+    this->clock_point_ = (this->clock_point_ + 1) % this->clock_used_size_;
   }
 }
 

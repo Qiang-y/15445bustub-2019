@@ -48,11 +48,13 @@ class ClockReplacer : public Replacer {
 
   auto Size() -> size_t override;
 
+  size_t clock_point_;
+
  private:
   // TODO(student): implement me!
   std::mutex latch_;
 
-  size_t clock_point_;
+  // size_t clock_point_;
 
   std::vector<std::pair<frame_id_t, bool>> clock_;
 
