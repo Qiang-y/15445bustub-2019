@@ -86,15 +86,16 @@ class HashTableBlockPage {
    * index is marked as occupied before the key and value can be inserted,
    * Insert returns false.
    * 
-   * 尝试将键和值插入到 block 的索引中。
-   * 插件是线程安全的。它使用比较和交换(CAS)来声明索引，
-   * 然后将键和值写入索引中，然后标记该索引为可读。
+   * 尝试将键和值插入到块中的索引中。
+   * insert是线程安全的。它使用比较和交换（CAS）来声明索引，
+   * 然后将key和value写入索引，然后标记
+   * 索引可读。
    *
-   * @param bucket_ind 要写入键和值的位置索引
-   * @param key 键插入键
+   * @param bucket_ind 用于写入键和值的索引
+   * @param key 要插入的键
    * @param value 要插入的值
-   * @return 如果值插入成功，则返回 true。如果索引在键和值可以插入之前被标记为已占用，
-   * 返回 false。
+   * @return 如果值插入成功，则返回true。如果在可以插入键和值之前，索引被标记为已占用，
+   * 插入返回 false。
    */
   bool Insert(slot_offset_t bucket_ind, const KeyType &key, const ValueType &value);
 
@@ -131,6 +132,7 @@ class HashTableBlockPage {
   // 0 if tombstone/brand new (never occupied), 1 otherwise.
   std::atomic_char readable_[(BLOCK_ARRAY_SIZE - 1) / 8 + 1];
   MappingType array_[0];
+
 };
 
 }  // namespace bustub
