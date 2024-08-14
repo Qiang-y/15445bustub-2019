@@ -31,6 +31,16 @@ namespace bustub {
  *  ----------------------------------------------------------------
  *
  *  Here '+' means concatenation.
+ * 
+ * 将索引键和值一起存储在块页内。支持
+ * 非唯一键。
+ *
+ * 块页格式（密钥按顺序存储）：
+ * ------------------------------------------------- ----------------
+ * |键(1) + 值(1) |键(2) + 值(2) | ... |键(n) + 值(n)
+ * ------------------------------------------------- ----------------
+ *
+ * 这里'+'表示连接。
  *
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
@@ -44,6 +54,10 @@ class HashTableBlockPage {
    *
    * @param bucket_ind the index in the block to get the key at
    * @return key at index bucket_ind of the block
+   * 
+   * 获取块中索引处的键。
+   * @parambucket_ind 块中获取密钥的索引
+   * @return key位于块的索引bucket_ind处
    */
   KeyType KeyAt(slot_offset_t bucket_ind) const;
 
@@ -52,6 +66,10 @@ class HashTableBlockPage {
    *
    * @param bucket_ind the index in the block to get the value at
    * @return value at index bucket_ind of the block
+   * 
+   * 获取块中索引处的值。
+   * @parambucket_ind 块中获取值的索引
+   * @return 块索引bucket_ind处的值
    */
   ValueType ValueAt(slot_offset_t bucket_ind) const;
 
@@ -67,6 +85,16 @@ class HashTableBlockPage {
    * @return If the value is inserted successfully, it returns true. If the
    * index is marked as occupied before the key and value can be inserted,
    * Insert returns false.
+   * 
+   * 尝试将键和值插入到 block 的索引中。
+   * 插件是线程安全的。它使用比较和交换(CAS)来声明索引，
+   * 然后将键和值写入索引中，然后标记该索引为可读。
+   *
+   * @param bucket_ind 要写入键和值的位置索引
+   * @param key 键插入键
+   * @param value 要插入的值
+   * @return 如果值插入成功，则返回 true。如果索引在键和值可以插入之前被标记为已占用，
+   * 返回 false。
    */
   bool Insert(slot_offset_t bucket_ind, const KeyType &key, const ValueType &value);
 
@@ -74,6 +102,10 @@ class HashTableBlockPage {
    * Removes a key and value at index.
    *
    * @param bucket_ind ind to remove the value
+   * 
+   * 在索引处删除键和值。
+   *
+   * @param bucket_ind 删除值的index
    */
   void Remove(slot_offset_t bucket_ind);
 

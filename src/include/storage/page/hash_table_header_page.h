@@ -36,31 +36,39 @@ class HashTableHeaderPage {
   /**
    * @return the number of buckets in the hash table;
    */
-  size_t GetSize() const;
+  auto GetSize() const -> size_t;
 
   /**
    * Sets the size field of the hash table to size
    *
    * @param size the size for the size field to be set to
+   *
+   * 将哈希表的size字段设置为 size
+   *
+   * @param size 要设置的大小字段的大小
    */
   void SetSize(size_t size);
 
   /**
    * @return the page ID of this page
    */
-  page_id_t GetPageId() const;
+  auto GetPageId() const -> page_id_t;
 
   /**
    * Sets the page ID of this page
    *
    * @param page_id the page id for the page id field to be set to
+   *
+   * 设置该页面的页面ID
+   *
+   * @param page_id 要设置的页面 id 字段的页面 id
    */
   void SetPageId(page_id_t page_id);
 
   /**
    * @return the lsn of this page
    */
-  lsn_t GetLSN() const;
+  auto GetLSN() const -> lsn_t;
 
   /**
    * Sets the LSN of this page
@@ -73,6 +81,10 @@ class HashTableHeaderPage {
    * Adds a block page_id to the end of header page
    *
    * @param page_id page_id to be added
+   *
+   * 将块 page_id 添加到标题页的末尾
+   *
+   * @param page_id 要添加的page_id
    */
   void AddBlockPageId(page_id_t page_id);
 
@@ -81,20 +93,26 @@ class HashTableHeaderPage {
    *
    * @param index the index of the block
    * @return the page_id for the block.
+   *
+   * 返回第index个块的page_id
+   *
+   * @param index 块的索引
+   * @return 该块的page_id。
    */
-  page_id_t GetBlockPageId(size_t index);
+  auto GetBlockPageId(size_t index) -> page_id_t;
 
   /**
    * @return the number of blocks currently stored in the header page
    */
-  size_t NumBlocks();
+  auto NumBlocks() -> size_t;
 
  private:
   __attribute__((unused)) lsn_t lsn_;
   __attribute__((unused)) size_t size_;
   __attribute__((unused)) page_id_t page_id_;
   __attribute__((unused)) size_t next_ind_;
-  __attribute__((unused)) page_id_t block_page_ids_[0];
+  // Flexible array member for page data.
+  __attribute__((unused)) page_id_t block_page_ids_[1];
 };
 
 }  // namespace bustub
