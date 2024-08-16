@@ -19,6 +19,7 @@
 #include "container/hash/hash_function.h"
 #include "container/hash/linear_probe_hash_table.h"
 #include "storage/index/index.h"
+#include "buffer/buffer_pool_manager.h"
 
 namespace bustub {
 

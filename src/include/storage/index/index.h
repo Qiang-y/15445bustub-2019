@@ -30,6 +30,13 @@ namespace bustub {
  * index, since the external callers does not know the actual structure of
  * the index key, so it is the index's responsibility to maintain such a
  * mapping relation and does the conversion between tuple key and index key
+ *
+ * class IndexMetadata - 保存索引对象的元数据
+ *
+ * 元数据对象维护元组模式和键属性
+ * 索引，因为外部调用者不知道实际的结构
+ * 索引键，因此维护这样的索引是索引的责任
+ * 映射关系以及元组键和索引键之间的转换
  */
 class Transaction;
 class IndexMetadata {

@@ -29,3 +29,8 @@
 #define BLOCK_ARRAY_SIZE (4 * PAGE_SIZE / (4 * sizeof(MappingType) + 1))
 
 #define HASH_TABLE_BLOCK_TYPE HashTableBlockPage<KeyType, ValueType, KeyComparator>
+
+/*
+ * 自定义负载因子，用于判断是否需要扩容
+ */
+#define HASH_LOAD_FACTOR 0.75

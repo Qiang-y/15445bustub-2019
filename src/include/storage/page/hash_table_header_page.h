@@ -106,13 +106,22 @@ class HashTableHeaderPage {
    */
   auto NumBlocks() -> size_t;
 
+  void SetUsedSize(size_t size);
+
+  auto GetUsedSize() -> size_t;
+
  private:
   __attribute__((unused)) lsn_t lsn_;
   __attribute__((unused)) size_t size_;
   __attribute__((unused)) page_id_t page_id_;
   __attribute__((unused)) size_t next_ind_;
-  // Flexible array member for page data.
+
+ /*----------自定义(不知道能不能添加，应该可以)------------*/
+ size_t used_size_;   // 已被使用的bucket的数量
+
+ // Flexible array member for page data.
   __attribute__((unused)) page_id_t block_page_ids_[1];
+
 };
 
 }  // namespace bustub

@@ -61,6 +61,8 @@ class WriteRecord {
 
 /**
  * Transaction tracks information related to a transaction.
+ *
+ * 交易跟踪与交易相关的信息。
  */
 class Transaction {
  public:
