@@ -194,6 +194,10 @@ page_id_t DiskManager::AllocatePage() { return next_page_id_++; }
  * Deallocate page (operations like drop index/table)
  * Need bitmap in header page for tracking pages
  * This does not actually need to do anything for now.
+ *
+* 释放页面（诸如删除索引/表之类的操作）
+* 需要在标题页中使用位图来跟踪页面
+* 现在实际上不需要做任何事情。
  */
 void DiskManager::DeallocatePage(__attribute__((unused)) page_id_t page_id) {}
 

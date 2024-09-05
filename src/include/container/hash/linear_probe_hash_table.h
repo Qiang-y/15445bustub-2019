@@ -105,6 +105,9 @@ class LinearProbeHashTable : public HashTable<KeyType, ValueType, KeyComparator>
   /**
    * Resizes the table to at least twice the initial size provided.
    * @param initial_size the initial size of the hash table
+   *
+   * 将表的大小至少调整为所提供的初始大小的两倍。
+   * @paraminitial_size 哈希表的初始大小
    */
   void Resize(size_t initial_size);
 
@@ -135,9 +138,9 @@ class LinearProbeHashTable : public HashTable<KeyType, ValueType, KeyComparator>
   // 在本地存储的block_page对应副本，减少对header_page的IO操作
   std::vector<page_id_t> block_page_ids_;
   // hash表中已使用的bucket数量，来计算何时扩容
-  size_t used_size_;
+  std::atomic<size_t> used_size_;
 
-  void InitHeader(HashTableHeaderPage* hash_header);
+  void InitHeader(HashTableHeaderPage* hash_header, size_t used_size);
 
   HASH_TABLE_BLOCK_TYPE* GetHashBlock(page_id_t page_id);
 

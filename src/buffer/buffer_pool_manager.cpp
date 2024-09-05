@@ -73,6 +73,7 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
 
 bool BufferPoolManager::FlushPageImpl(page_id_t page_id) {
   // Make sure you call DiskManager::WritePage!
+  std::lock_guard<std::mutex> lock_guard(latch_);
   if(page_id == INVALID_PAGE_ID) {
     throw std::invalid_argument("The argument 'page_id' can not be 'INVALID_PAGE_ID'.");
   }
@@ -84,7 +85,8 @@ bool BufferPoolManager::FlushPageImpl(page_id_t page_id) {
   auto frame_id_temp = page_table_it->second;
 
   // 用DiskManager::WritePage() 来写回，
-  disk_manager_->WritePage(page_id, pages_[frame_id_temp].data_);
+  if(pages_[frame_id_temp].IsDirty())
+    disk_manager_->WritePage(page_id, pages_[frame_id_temp].data_);
   // 清除脏页标志
   pages_[frame_id_temp].is_dirty_ = false;
 
@@ -134,6 +136,11 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
   // 1.   If P does not exist, return true.
   // 2.   If P exists, but has a non-zero pin-count, return false. Someone is using the page.
   // 3.   Otherwise, P can be deleted. Remove P from the page table, reset its metadata and return it to the free list.
+  // 0. 确保调用 DiskManager::DeallocatePage！
+  // 1. 在页表中搜索所请求的页（P）。
+  // 1. 如果P不存在，则返回true。
+  // 2. 如果 P 存在，但引脚数非零，则返回 false。有人正在使用该页面。
+  // 3. 否则，可以删除P。从页表中删除 P，重置其元数据并将其返回到空闲列表。
   std::lock_guard<std::mutex> lock_guard(latch_);
   auto page_table_it = page_table_.find(page_id);
   // 没找到该page
@@ -142,20 +149,22 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
   auto frame_id_temp = page_table_it->second;
   if (pages_[frame_id_temp].GetPinCount() > 0) return false;
 
-  // 暂时不清楚这里是否要写回，认为应该是要
-  if (pages_[frame_id_temp].is_dirty_ == true) FlushPage(page_id);
+  //// 暂时不清楚这里是否要写回，认为应该是要
+  // 后面看这里是直接抛弃了该page
+  // if (pages_[frame_id_temp].IsDirty()) FlushPage(page_id);
 
+  disk_manager_->DeallocatePage(page_id);
   // 清空所有数据和元数据
   pages_[frame_id_temp].ResetMemory();
-  // pages_[frame_id_temp].is_dirty_ = false;
+  pages_[frame_id_temp].is_dirty_ = false;
   pages_[frame_id_temp].page_id_ = INVALID_PAGE_ID;
+  pages_[frame_id_temp].pin_count_ = 0;
   replacer_->Pin(frame_id_temp);
   page_table_.erase(page_id);
 
   // 将frame添加回空闲队列
   free_list_.emplace_back(frame_id_temp);
 
-  // DeallocatePage(page_id);
   return false;
 }
 

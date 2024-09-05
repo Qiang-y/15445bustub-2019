@@ -35,11 +35,12 @@ HASH_TABLE_TYPE::LinearProbeHashTable(const std::string &name, BufferPoolManager
 
   buck_size_ = num_buckets;
   block_size_ = (num_buckets - 1) / BLOCK_ARRAY_SIZE + 1;
+  used_size_ = 0;
 
   auto page = buffer_pool_manager_->NewPage(&header_page_id_);
-  HashTableHeaderPage* hash_header = reinterpret_cast<HashTableHeaderPage*>(page->GetData());
+  auto hash_header = reinterpret_cast<HashTableHeaderPage*>(page->GetData());
 
-  InitHeader(hash_header);
+  InitHeader(hash_header, 0);
 
   buffer_pool_manager_->UnpinPage(header_page_id_, true);
   table_latch_.WUnlock();
@@ -63,7 +64,7 @@ bool HASH_TABLE_TYPE::GetValue(Transaction *transaction, const KeyType &key, std
   // HASH_TABLE_BLOCK_TYPE* block = GetHashBlock(block_page_ids_[key_block_index]);
   auto page = buffer_pool_manager_->FetchPage(block_page_ids_[key_block_index]);
   page->RLatch();
-  HASH_TABLE_BLOCK_TYPE* block = reinterpret_cast<HASH_TABLE_BLOCK_TYPE*>(page->GetData());
+  auto* block = reinterpret_cast<HASH_TABLE_BLOCK_TYPE*>(page->GetData());
 
   // 查找下标
   while(block->IsOccupied(key_bucket_index) && key_slot < max_step) {
@@ -98,7 +99,7 @@ bool HASH_TABLE_TYPE::Insert(Transaction *transaction, const KeyType &key, const
     auto page = buffer_pool_manager_->FetchPage(header_page_id_);
     auto header = reinterpret_cast<HashTableHeaderPage*>(page->GetData());
     page->WLatch();
-    header->SetUsedSize(used_size_);
+    header->SetUsedSize(used_size_.load());
     page->WUnlatch();
     buffer_pool_manager_->UnpinPage(header_page_id_, true);
   }
@@ -126,7 +127,7 @@ bool HASH_TABLE_TYPE::Remove(Transaction *transaction, const KeyType &key, const
 
   auto page = buffer_pool_manager_->FetchPage(block_page_ids_[key_block_index]);
   page->WLatch();
-  HASH_TABLE_BLOCK_TYPE* block = reinterpret_cast<HASH_TABLE_BLOCK_TYPE*>(page->GetData());
+  auto* block = reinterpret_cast<HASH_TABLE_BLOCK_TYPE*>(page->GetData());
   while(block->IsOccupied(key_bucket_index) && key_slot < max_step) {
     if(block->IsReadable(key_bucket_index) &&
        !comparator_(key, block->KeyAt(key_bucket_index)) &&
@@ -152,7 +153,56 @@ bool HASH_TABLE_TYPE::Remove(Transaction *transaction, const KeyType &key, const
  * RESIZE
  *****************************************************************************/
 template <typename KeyType, typename ValueType, typename KeyComparator>
-void HASH_TABLE_TYPE::Resize(size_t initial_size) {}
+void HASH_TABLE_TYPE::Resize(size_t initial_size) {
+  table_latch_.WLock();
+  // 在等待锁的时候已被别的线程扩容
+  if(buck_size_ != initial_size && static_cast<float>(used_size_.load()) < buck_size_ * HASH_LOAD_FACTOR) {
+    table_latch_.WUnlock();
+    return;
+  }
+  // 扩容
+  buck_size_ = initial_size * 2;
+  block_size_ = (buck_size_ - 1) / BLOCK_ARRAY_SIZE + 1;
+
+  // 备份旧数据
+  std::vector<page_id_t> old_block_page_ids(block_page_ids_);
+  auto old_header_page_id = header_page_id_;
+
+  // 删除旧header
+  buffer_pool_manager_->DeletePage(old_header_page_id);
+
+  // 得到新header
+  page_id_t new_header_id;
+  auto new_header_page = buffer_pool_manager_->NewPage(&new_header_id);
+  new_header_page->WLatch();
+  auto new_header = reinterpret_cast<HashTableHeaderPage*>(new_header_page->GetData());
+  header_page_id_ = new_header_id;
+  // 初始化新header
+  InitHeader(new_header, used_size_);
+
+  for(auto& block_it : old_block_page_ids) {
+    // 获取旧的block
+    auto old_block_page = buffer_pool_manager_->FetchPage(block_it);
+    old_block_page->RLatch();
+    auto old_block = reinterpret_cast<HASH_TABLE_BLOCK_TYPE*>(old_block_page->GetData());
+
+    // 对每个元素重新插入新表
+    for(size_t bucket_it = 0; bucket_it < BLOCK_ARRAY_SIZE; ++bucket_it) {
+      if(old_block->IsReadable(bucket_it)) {
+        InsertImpl(nullptr, old_block->KeyAt(bucket_it), old_block->ValueAt(bucket_it));
+      }
+    }
+
+    // 删除旧block
+    old_block_page->RUnlatch();
+    buffer_pool_manager_->UnpinPage(block_it, false);
+    buffer_pool_manager_->DeletePage(block_it);
+  }
+
+  new_header_page->WUnlatch();
+  buffer_pool_manager_->UnpinPage(new_header_id, true);
+  table_latch_.WUnlock();
+}
 
 /*****************************************************************************
  * GETSIZE
@@ -163,11 +213,11 @@ size_t HASH_TABLE_TYPE::GetSize() {
 }
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
-void LinearProbeHashTable<KeyType, ValueType, KeyComparator>::InitHeader(HashTableHeaderPage *hash_header) {
+void LinearProbeHashTable<KeyType, ValueType, KeyComparator>::InitHeader(HashTableHeaderPage *hash_header, size_t used_size) {
+  assert(hash_header != nullptr);
   hash_header->SetSize(buck_size_);
   hash_header->SetPageId(header_page_id_);
-  hash_header->SetUsedSize(0);
-  used_size_ = 0;
+  hash_header->SetUsedSize(used_size);
   block_page_ids_.clear();
   for (size_t i = 0; i < buck_size_; ++i) {
     page_id_t page_id_temp;
@@ -196,7 +246,7 @@ bool LinearProbeHashTable<KeyType, ValueType, KeyComparator>::InsertImpl(Transac
   auto page = buffer_pool_manager_->FetchPage(block_page_ids_[key_block_index]);
   // 写锁
   page->WLatch();
-  HASH_TABLE_BLOCK_TYPE *block = reinterpret_cast<HASH_TABLE_BLOCK_TYPE *>(page->GetData());
+  auto *block = reinterpret_cast<HASH_TABLE_BLOCK_TYPE *>(page->GetData());
 
   // 不断尝试插入，直到插入成功，或者失败（没有空位 | 已经有相同的KV了）
   while (!block->Insert(key_bucket_index, key, value)) {
