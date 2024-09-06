@@ -23,6 +23,9 @@ namespace bustub {
 /**
  * TableHeap represents a physical table on disk.
  * This is just a doubly-linked list of pages.
+ *
+ * TableHeap 代表磁盘上的物理表。
+ * 这只是一个双向链接的页面列表。
  */
 class TableHeap {
   friend class TableIterator;

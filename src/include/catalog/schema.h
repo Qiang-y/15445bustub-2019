@@ -26,6 +26,8 @@ class Schema {
   /**
    * Constructs the schema corresponding to the vector of columns, read left-to-right.
    * @param columns columns that describe the schema's individual columns
+   * 构造与列向量对应的 schema，从左到右读取。
+   * @param 列 描述架构的各个列
    */
   explicit Schema(const std::vector<Column> &columns);
 
@@ -87,16 +89,20 @@ class Schema {
   std::string ToString() const;
 
  private:
-  /** Fixed-length column size, i.e. the number of bytes used by one tuple. */
+  /** Fixed-length column size, i.e. the number of bytes used by one tuple.
+   * 固定长度列大小，即一个tuple使用的字节数。*/
   uint32_t length_;
 
-  /** All the columns in the schema, inlined and uninlined. */
+  /** All the columns in the schema, inlined and uninlined.
+   * 架构中的所有列（内联和非内联）。*/
   std::vector<Column> columns_;
 
-  /** True if all the columns are inlined, false otherwise. */
+  /** True if all the columns are inlined, false otherwise.
+   * 如果所有列都内联，则为 true，否则为 false*/
   bool tuple_is_inlined_;
 
-  /** Indices of all uninlined columns. */
+  /** Indices of all uninlined columns.
+   * 所有未内联列的索引。*/
   std::vector<uint32_t> uninlined_columns_;
 };
 

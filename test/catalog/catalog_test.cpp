@@ -10,6 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <gmock/internal/gmock-internal-utils.h>
+
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -22,7 +24,7 @@
 namespace bustub {
 
 // NOLINTNEXTLINE
-TEST(CatalogTest, DISABLED_CreateTableTest) {
+TEST(CatalogTest, CreateTableTest) {
   auto disk_manager = new DiskManager("catalog_test.db");
   auto bpm = new BufferPoolManager(32, disk_manager);
   auto catalog = new SimpleCatalog(bpm, nullptr, nullptr);
@@ -38,11 +40,13 @@ TEST(CatalogTest, DISABLED_CreateTableTest) {
 
   Schema schema(columns);
   auto *table_metadata = catalog->CreateTable(nullptr, table_name, schema);
-  (void)table_metadata;
+  // (void)table_metadata;  // 防止警告
 
   // Notice that this test case doesn't check anything! :(
   // It is up to you to extend it
+  EXPECT_EQ(table_metadata->name_, table_name);
 
+  EXPECT_EQ(catalog->GetTable(table_name), table_metadata);
   delete catalog;
   delete bpm;
   delete disk_manager;

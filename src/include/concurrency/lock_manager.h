@@ -36,6 +36,7 @@ enum class DeadlockMode { PREVENTION, DETECTION };
 
 /**
  * LockManager handles transactions asking for locks on records.
+ * LockManager 处理请求记录锁定的事务。
  */
 class LockManager {
   enum class LockMode { SHARED, EXCLUSIVE };
@@ -87,6 +88,11 @@ class LockManager {
    * 2. block on wait, return true when the lock request is granted; and
    * 3. it is undefined behavior to try locking an already locked RID in the same transaction, i.e. the transaction
    *    is responsible for keeping track of its current locks.
+   *    [LOCK_NOTE]：对于所有锁定功能，我们：
+   * 1. 如果交易中止，则返回 false；和
+   * 2. block on wait，当锁请求被授予时返回true；和
+   * 3.在同一个事务中尝试锁定已经锁定的RID是未定义的行为，即事务
+   * 负责跟踪其当前的锁。
    */
 
   /**

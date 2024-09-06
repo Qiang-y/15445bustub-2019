@@ -105,7 +105,7 @@ bool HASH_TABLE_TYPE::Insert(Transaction *transaction, const KeyType &key, const
   }
   // 负载因子大于设置值时需要扩容
   if(static_cast<float>(used_size_) / buck_size_ > HASH_LOAD_FACTOR) {
-    Resize();
+    Resize(buck_size_);
   }
   return success;
 }
