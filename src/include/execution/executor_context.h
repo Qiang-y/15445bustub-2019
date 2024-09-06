@@ -31,6 +31,11 @@ class ExecutorContext {
    * @param transaction the transaction executing the query
    * @param catalog the catalog that the executor should use
    * @param bpm the buffer pool manager that the executor should use
+   *
+   * 为正在执行查询的事务创建 ExecutorContext。
+   * @param transaction 执行查询的事务
+   * @param Catalog 执行器应该使用的目录
+   * @param bpm 执行器应该使用的缓冲池管理器
    */
   ExecutorContext(Transaction *transaction, SimpleCatalog *catalog, BufferPoolManager *bpm)
       : transaction_(transaction), catalog_{catalog}, bpm_{bpm} {}

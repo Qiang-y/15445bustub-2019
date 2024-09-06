@@ -26,6 +26,9 @@ inline CmpBool GetCmpBool(bool boolean) { return boolean ? CmpBool::CmpTrue : Cm
 // A value is an abstract class that represents a view over SQL data stored in
 // some materialized state. All values have a type and comparison functions, but
 // subclasses implement other type-specific functionality.
+// 值是一个抽象类，它表示对存储在
+// 一些物化状态。所有值都有一个 type 和 comparison 函数，但
+// 子类实现其他特定于类型的功能。
 class Value {
   // Friend Type classes
   friend class Type;

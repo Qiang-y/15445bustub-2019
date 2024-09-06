@@ -27,6 +27,11 @@ enum class PlanType { SeqScan, HashJoin, Insert, Aggregation };
  * Plan nodes are modeled as trees, so each plan node can have a variable number of children.
  * Per the Volcano model, the plan node receives the tuples of its children.
  * The ordering of the children may matter.
+ *
+ * AbstractPlanNode 代表我们系统中所有可能的计划节点类型。
+ * 计划节点被建模为树，因此每个计划节点可以有可变数量的子节点。
+ * 根据 Volcano 模型，计划节点接收其子节点的元组。
+ * 孩子的顺序可能很重要。
  */
 class AbstractPlanNode {
  public:
@@ -34,6 +39,9 @@ class AbstractPlanNode {
    * Create a new AbstractPlanNode with the specified output schema and children.
    * @param output_schema the schema for the output of this plan node
    * @param children the children of this plan node
+   * 使用指定的输出模式和子级创建一个新的 AbstractPlanNode。
+   * @param output_schema 该计划节点的输出模式
+   * @param child 该计划节点的子节点
    */
   AbstractPlanNode(const Schema *output_schema, std::vector<const AbstractPlanNode *> &&children)
       : output_schema_(output_schema), children_(std::move(children)) {}
@@ -57,6 +65,8 @@ class AbstractPlanNode {
   /**
    * The schema for the output of this plan node. In the volcano model, every plan node will spit out tuples,
    * and this tells you what schema this plan node's tuples will have.
+   * 此计划节点的输出的schema。在 volcano 模型中，每个 plan 节点都会吐出 Tuples，
+   * ，这告诉你这个计划节点的元组将具有什么模式。
    */
   const Schema *output_schema_;
   /** The children of this plan node. */

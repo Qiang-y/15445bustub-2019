@@ -36,7 +36,8 @@ class AbstractExpression {
   /** Virtual destructor. */
   virtual ~AbstractExpression() = default;
 
-  /** @return the value obtained by evaluating the tuple with the given schema */
+  /** @return the value obtained by evaluating the tuple with the given schema
+   * @return通过使用给定架构评估 Tuples 获得的值 */
   virtual Value Evaluate(const Tuple *tuple, const Schema *schema) const = 0;
 
   /**
@@ -46,6 +47,12 @@ class AbstractExpression {
    * @param right_tuple the right tuple
    * @param right_schema the right tuple's schema
    * @return the value obtained by evaluating a join on the left and right
+   * 返回通过计算连接而获得的值。
+   * @param left_tuple 左元组
+   * @param left_schema 左元组的模式
+   * @param right_tuple 右元组
+   * @param right_schema 右元组的模式
+   * @return 计算左右连接得到的值
    */
   virtual Value EvaluateJoin(const Tuple *left_tuple, const Schema *left_schema, const Tuple *right_tuple,
                              const Schema *right_schema) const = 0;
