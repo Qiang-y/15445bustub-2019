@@ -24,6 +24,9 @@ namespace bustub {
  * HashJoinPlanNode is used to represent performing a hash join between two children plan nodes.
  * By convention, the left child (index 0) is used to build the hash table,
  * and the right child (index 1) is used in probing the hash table.
+ * HashJoinPlanNode 用于表示在两个子计划节点之间执行哈希连接。
+ * 按照惯例，左子节点（索引0）用于构建哈希表，
+ * 右子节点（索引 1）用于探测哈希表。
  */
 class HashJoinPlanNode : public AbstractPlanNode {
  public:
@@ -65,8 +68,11 @@ class HashJoinPlanNode : public AbstractPlanNode {
   const std::vector<const AbstractExpression *> &GetRightKeys() const { return right_hash_keys_; }
 
  private:
-  /** The hash join predicate. */
+  /** The hash join predicate.
+   * hash join 谓词。
+   */
   const AbstractExpression *predicate_;
+
   /** The left child's hash keys. */
   std::vector<const AbstractExpression *> left_hash_keys_;
   /** The right child's hash keys. */

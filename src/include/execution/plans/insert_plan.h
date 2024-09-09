@@ -24,6 +24,9 @@ namespace bustub {
  * InsertPlanNode identifies a table that should be inserted into.
  * The values to be inserted are either embedded into the InsertPlanNode itself, i.e. a "raw insert",
  * or will come from the child of the InsertPlanNode. To simplify the assignment, InsertPlanNode has at most one child.
+ * InsertPlanNode 标识应插入的表。
+ * 要插入的值要么嵌入到 InsertPlanNode 本身中，即“原始插入”，
+ * 或将来自 InsertPlanNode 的子节点。为了简化分配，InsertPlanNode 最多有一个子节点。
  */
 class InsertPlanNode : public AbstractPlanNode {
  public:
@@ -48,10 +51,14 @@ class InsertPlanNode : public AbstractPlanNode {
   /** @return the identifier of the table that should be inserted into */
   table_oid_t TableOid() const { return table_oid_; }
 
-  /** @return true if we embed insert values directly into the plan, false if we have a child plan providing tuples */
+  /** @return true if we embed insert values directly into the plan, false if we have a child plan providing tuples
+   * @return true 如果我们将插入值直接嵌入到计划中. 否则 false 如果我们有一个提供元组的子计划
+   */
   bool IsRawInsert() const { return GetChildren().empty(); }
 
-  /** @return the raw values to be inserted at the particular index */
+  /** @return the raw values to be inserted at the particular index
+   * @return 要在特定索引处插入的原始值
+   */
   const std::vector<Value> &RawValuesAt(uint32_t idx) const {
     BUSTUB_ASSERT(IsRawInsert(), "This is not a raw insert, you should use the child plan.");
     return raw_values_[idx];
@@ -63,7 +70,9 @@ class InsertPlanNode : public AbstractPlanNode {
     return raw_values_;
   }
 
-  /** @return the child plan providing tuples to be inserted */
+  /** @return the child plan providing tuples to be inserted
+   * @return 提供要插入的元组的子计划
+   */
   const AbstractPlanNode *GetChildPlan() const {
     BUSTUB_ASSERT(!IsRawInsert(), "This is a raw insert, no child plan should be used.");
     BUSTUB_ASSERT(GetChildren().size() == 1, "Insert should have at most one child plan.");
@@ -71,9 +80,14 @@ class InsertPlanNode : public AbstractPlanNode {
   }
 
  private:
-  /** The raw values embedded in this insert plan. */
+  /** The raw values embedded in this insert plan.
+   * 此插入计划中嵌入的原始值
+   */
   std::vector<std::vector<Value>> raw_values_;
-  /** The table to be inserted into. */
+
+  /** The table to be inserted into.
+   * 要插入的表。
+   */
   table_oid_t table_oid_;
 };
 }  // namespace bustub

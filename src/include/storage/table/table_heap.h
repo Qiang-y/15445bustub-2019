@@ -59,6 +59,11 @@ class TableHeap {
    * @param[out] rid the rid of the inserted tuple
    * @param txn the transaction performing the insert
    * @return true iff the insert is successful
+   * 如果新元组太大而无法放入旧页面，则返回 false （将删除并插入）
+   * @param tuple 新元组
+   * @param 摆脱旧元组
+   * @param txn 事务执行更新
+   * @return true 表示更新成功。
    */
   bool InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn);
 

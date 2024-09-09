@@ -48,8 +48,8 @@ class SeqScanExecutor : public AbstractExecutor {
    * 要执行的顺序扫描计划节点 */
   const SeqScanPlanNode *plan_;
 
-  // 要查询的表
-  TableHeap* table_heap_;
+  // 要查询的表的元数据
+  TableMetadata* table_metadata_;
   // 迭代器
   TableIterator table_iterator_;
 };

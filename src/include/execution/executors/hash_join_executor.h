@@ -32,6 +32,7 @@
 namespace bustub {
 /**
  * IdentityHashFunction hashes everything to itself, i.e. h(x) = x.
+ * IdentityHashFunction 将所有内容散列到自身，即 h(x) = x。
  */
 class IdentityHashFunction : public HashFunction<hash_t> {
  public:
@@ -77,6 +78,7 @@ class SimpleHashJoinHashTable {
 };
 
 // TODO(student): when you are ready to attempt task 3, replace the using declaration!
+// 当你准备尝试任务 3 时，请替换掉 using 声明！
 using HT = SimpleHashJoinHashTable;
 
 // using HashJoinKeyType = ???;
@@ -98,8 +100,10 @@ class HashJoinExecutor : public AbstractExecutor {
   HashJoinExecutor(ExecutorContext *exec_ctx, const HashJoinPlanNode *plan, std::unique_ptr<AbstractExecutor> &&left,
                    std::unique_ptr<AbstractExecutor> &&right);
 
-  /** @return the JHT in use. Do not modify this function, otherwise you will get a zero. */
+  /** @return the JHT in use. Do not modify this function, otherwise you will get a zero.
+   * @return正在使用的JHT。不要修改这个函数，否则你会得到零 */
   // Uncomment me! const HT *GetJHT() const { return &jht_; }
+  const HT *GetJHT() const { return &jht_; }
 
   const Schema *GetOutputSchema() override { return plan_->OutputSchema(); }
 
@@ -113,33 +117,52 @@ class HashJoinExecutor : public AbstractExecutor {
    * @param schema schema to evaluate the tuple on
    * @param exprs expressions to evaluate the tuple with
    * @return the hashed tuple
+   * 通过针对给定架构上的每个表达式对元组进行评估，并组合所有非 null 哈希值，对元组进行哈希处理。
+   * @param 要进行哈希处理的元组元组
+   * @param schema schema 来评估
+   * @param exprs 表达式来计算元组
+   * @return哈希元组
    */
   hash_t HashValues(const Tuple *tuple, const Schema *schema, const std::vector<const AbstractExpression *> &exprs) {
     hash_t curr_hash = 0;
     // For every expression,
     for (const auto &expr : exprs) {
-      // We evaluate the tuple on the expression and schema.
+      // We evaluate the tuple on the expression and schema.    我们根据表达式和模式评估元组。
       Value val = expr->Evaluate(tuple, schema);
-      // If this produces a value,
+      // If this produces a value,     如果这产生一个值，
       if (!val.IsNull()) {
-        // We combine the hash of that value into our current hash.
+        // We combine the hash of that value into our current hash.     我们将该值的哈希值合并到当前的哈希值中。
         curr_hash = HashUtil::CombineHashes(curr_hash, HashUtil::HashValue(&val));
       }
     }
     return curr_hash;
   }
 
+  // 工具函数，得到下两条tuple（左和右）
+  bool GetNextTuples();
  private:
   /** The hash join plan node. */
   const HashJoinPlanNode *plan_;
-  /** The comparator is used to compare hashes. */
+  /** The comparator is used to compare hashes.
+   * 比较器用于比较哈希值 */
   [[maybe_unused]] HashComparator jht_comp_{};
+
   /** The identity hash function. */
   IdentityHashFunction jht_hash_fn_{};
 
   /** The hash table that we are using. */
   // Uncomment me! HT jht_;
+ // 取消注释我！ HT jht_；
+  HT jht_;
   /** The number of buckets in the hash table. */
   static constexpr uint32_t jht_num_buckets_ = 2;
+
+  std::unique_ptr<AbstractExecutor> left_child_executor_;
+  std::unique_ptr<AbstractExecutor> right_child_executor_;
+
+  // 记录当前匹配的左右tuple
+  std::vector<Tuple>* left_tuples_{};
+  size_t left_tuple_index_{};
+  Tuple* right_tuple_{};
 };
 }  // namespace bustub

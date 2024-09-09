@@ -42,6 +42,7 @@ class Tuple {
   explicit Tuple(RID rid) : rid_(rid) {}
 
   // constructor for creating a new tuple based on input value
+  // 用于根据输入值创建新元组的构造函数
   Tuple(std::vector<Value> values, const Schema *schema);
 
   // copy constructor, deep copy
@@ -89,8 +90,8 @@ class Tuple {
   // Get the starting storage address of specific column
   const char *GetDataPtr(const Schema *schema, uint32_t column_idx) const;
 
-  bool allocated_{false};  // is allocated?
-  RID rid_{};              // if pointing to the table heap, the rid is valid
+  bool allocated_{false};  // is allocated? 被分配？
+  RID rid_{};              // if pointing to the table heap, the rid is valid 如果指向表堆，则rid有效
   uint32_t size_{0};
   char *data_{nullptr};
 };
