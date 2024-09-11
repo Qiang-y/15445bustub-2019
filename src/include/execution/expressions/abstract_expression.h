@@ -62,6 +62,10 @@ class AbstractExpression {
    * @param group_bys the group by values
    * @param aggregates the aggregate values
    * @return the value obtained by checking the aggregates and group bys
+   * 返回通过评估聚合而获得的值。
+   * @param group_bys 按值分组
+   * @param 聚合聚合值
+   * @return 通过检查聚合和分组得到的值
    */
   virtual Value EvaluateAggregate(const std::vector<Value> &group_bys, const std::vector<Value> &aggregates) const = 0;
 

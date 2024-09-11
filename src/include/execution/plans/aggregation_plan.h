@@ -21,13 +21,17 @@
 
 namespace bustub {
 
-/** AggregationType enumerates all the possible aggregation functions in our system. */
+/** AggregationType enumerates all the possible aggregation functions in our system.
+ * AggregationType 枚举了我们系统中所有可能的聚合函数。*/
 enum class AggregationType { CountAggregate, SumAggregate, MinAggregate, MaxAggregate };
 
 /**
  * AggregationPlanNode represents the various SQL aggregation functions.
  * For example, COUNT(), SUM(), MIN() and MAX().
  * To simplfiy this project, AggregationPlanNode must always have exactly one child.
+ * AggregationPlanNode 代表各种 SQL 聚合函数。
+ * 例如，COUNT()、SUM()、MIN() 和 MAX()。
+ * 为了简化这个项目，AggregationPlanNode 必须始终只有一个子节点。
  */
 class AggregationPlanNode : public AbstractPlanNode {
  public:
@@ -38,7 +42,13 @@ class AggregationPlanNode : public AbstractPlanNode {
    * @param having the having clause of the aggregation
    * @param group_bys the group by clause of the aggregation
    * @param aggregates the expressions that we are aggregating
-   * @param agg_types the types that we are aggregating
+  * @param agg_types the types that we are aggregating创建一个新的 AggregationPlanNode。
+  * @param output_schema 该计划节点的输出格式
+  * @param child 子计划聚合数据
+  * @param 具有聚合的having 子句
+  * @param group_bys 聚合的group by子句
+  * @param 聚合我们正在聚合的表达式
+  * @param agg_types 我们正在聚合的类型
    */
   AggregationPlanNode(const Schema *output_schema, const AbstractPlanNode *child, const AbstractExpression *having,
                       std::vector<const AbstractExpression *> &&group_bys,
@@ -89,6 +99,9 @@ struct AggregateKey {
    * Compares two aggregate keys for equality.
    * @param other the other aggregate key to be compared with
    * @return true if both aggregate keys have equivalent group-by expressions, false otherwise
+   * 比较两个聚合键是否相等。
+   * @param other 要与之比较的其他聚合键
+   * @return true 如果两个聚合键具有相同的 group-by 表达式，否则 false
    */
   bool operator==(const AggregateKey &other) const {
     for (uint32_t i = 0; i < other.group_bys_.size(); i++) {

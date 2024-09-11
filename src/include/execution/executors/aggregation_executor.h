@@ -29,6 +29,7 @@
 namespace bustub {
 /**
  * A simplified hash table that has all the necessary functionality for aggregations.
+ * 一个简化的哈希表，具有聚合所需的所有功能。
  */
 class SimpleAggregationHashTable {
  public:
@@ -67,7 +68,8 @@ class SimpleAggregationHashTable {
     return {values};
   }
 
-  /** Combines the input into the aggregation result. */
+  /** Combines the input into the aggregation result.
+   * 将输入合并到聚合结果中。(这是个工具函数) */
   void CombineAggregateValues(AggregateValue *result, const AggregateValue &input) {
     for (uint32_t i = 0; i < agg_exprs_.size(); i++) {
       switch (agg_types_[i]) {
@@ -141,16 +143,23 @@ class SimpleAggregationHashTable {
   Iterator End() { return Iterator{ht.cend()}; }
 
  private:
-  /** The hash table is just a map from aggregate keys to aggregate values. */
+  /** The hash table is just a map from aggregate keys to aggregate values.
+   * 哈希表只是从聚合键到聚合值的映射 */
   std::unordered_map<AggregateKey, AggregateValue> ht{};
-  /** The aggregate expressions that we have. */
+
+  /** The aggregate expressions that we have.
+   * 我们拥有的聚合表达式。（比如count（）， sum（）等要进行的聚合操作）
+   */
   const std::vector<const AbstractExpression *> &agg_exprs_;
-  /** The types of aggregations that we have. */
+
+  /** The typ of aggregations that we have.
+   * 我们拥有的聚合类型。（对应指明上面agg_exprs_）*/
   const std::vector<AggregationType> &agg_types_;
 };
 
 /**
  * AggregationExecutor executes an aggregation operation (e.g. COUNT, SUM, MIN, MAX) on the tuples of a child executor.
+ * AggregationExecutor 对子执行器的元组执行聚合操作（例如 COUNT、SUM、MIN、MAX）。
  */
 class AggregationExecutor : public AbstractExecutor {
  public:
@@ -197,7 +206,9 @@ class AggregationExecutor : public AbstractExecutor {
   std::unique_ptr<AbstractExecutor> child_;
   /** Simple aggregation hash table. */
   // Uncomment me! SimpleAggregationHashTable aht_;
+  SimpleAggregationHashTable aht_;
   /** Simple aggregation hash table iterator. */
   // Uncomment me! SimpleAggregationHashTable::Iterator aht_iterator_;
+  SimpleAggregationHashTable::Iterator aht_iterator_;
 };
 }  // namespace bustub

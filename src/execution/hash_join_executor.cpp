@@ -14,15 +14,15 @@
 #include <memory>
 #include <vector>
 
-#include "../../cmake-build-debug/googletest-src/googletest/include/gtest/gtest-param-test.h"
+// #include "../../cmake-build-debug/googletest-src/googletest/include/gtest/gtest-param-test.h"
 
 namespace bustub {
 
 HashJoinExecutor::HashJoinExecutor(ExecutorContext *exec_ctx, const HashJoinPlanNode *plan,
                                    std::unique_ptr<AbstractExecutor> &&left, std::unique_ptr<AbstractExecutor> &&right)
     : AbstractExecutor(exec_ctx),
-      jht_("SimpleHashTable", exec_ctx->GetBufferPoolManager(), jht_comp_, jht_num_buckets_, jht_hash_fn_),
       plan_(plan),
+      jht_("SimpleHashTable", exec_ctx->GetBufferPoolManager(), jht_comp_, jht_num_buckets_, jht_hash_fn_),
       left_child_executor_(std::move(left)),
       right_child_executor_(std::move(right)){}
 

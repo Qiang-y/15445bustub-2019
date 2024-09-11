@@ -21,6 +21,7 @@
 namespace bustub {
 /**
  * AggregateValueExpression represents aggregations such as MAX(a), MIN(b), COUNT(c)
+ * AggregateValueExpression 表示聚合，例如 MAX(a)、MIN(b)、COUNT(c)
  */
 class AggregateValueExpression : public AbstractExpression {
  public:
