@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <common/util/hash_util.h>
+
 #include <atomic>
 #include <utility>
 #include <vector>

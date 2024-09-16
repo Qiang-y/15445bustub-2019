@@ -27,10 +27,10 @@ bool SeqScanExecutor::Next(Tuple *tuple) {
     return false;
   }
   while(table_iterator_ != table_metadata_->table_->End()) {
-    Tuple* cur_tuple = table_iterator_.operator->();
+    Tuple cur_tuple = *table_iterator_;
     ++table_iterator_;
-    if(plan_->GetPredicate()->Evaluate(cur_tuple, plan_->OutputSchema()).GetAs<bool>()) {
-      tuple = cur_tuple;
+    if(plan_->GetPredicate()->Evaluate(&cur_tuple, plan_->OutputSchema()).GetAs<bool>()) {
+      *tuple = cur_tuple;
       return true;
     }
   }

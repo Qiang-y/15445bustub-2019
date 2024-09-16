@@ -79,11 +79,11 @@ class SimpleHashJoinHashTable {
 
 // TODO(student): when you are ready to attempt task 3, replace the using declaration!
 // 当你准备尝试任务 3 时，请替换掉 using 声明！
-using HT = SimpleHashJoinHashTable;
+// using HT = SimpleHashJoinHashTable;
 
-// using HashJoinKeyType = ???;
-// using HashJoinValType = ???;
-// using HT = LinearProbeHashTable<HashJoinKeyType, HashJoinValType, HashComparator>;
+using HashJoinKeyType = hash_t;
+using HashJoinValType = TmpTuple;
+using HT = LinearProbeHashTable<HashJoinKeyType, HashJoinValType, HashComparator>;
 
 /**
  * HashJoinExecutor executes hash join operations.
@@ -140,6 +140,8 @@ class HashJoinExecutor : public AbstractExecutor {
 
   // 工具函数，得到下两条tuple（左和右）
   bool GetNextTuples();
+  // 工具函数，销毁本次hashjoin时持久化到硬盘的TmpTuplePage（应该要这样，虽然文档没写）
+  void Destory();
  private:
   /** The hash join plan node. */
   const HashJoinPlanNode *plan_;
@@ -164,5 +166,7 @@ class HashJoinExecutor : public AbstractExecutor {
   std::vector<Tuple>* left_tuples_{};
   size_t left_tuple_index_{};
   Tuple* right_tuple_{};
+  // 记录所有新建的TmpTuplePageId,方便后面销毁防止浪费空间
+  std::vector<page_id_t> tmp_page_ids_{};
 };
 }  // namespace bustub
