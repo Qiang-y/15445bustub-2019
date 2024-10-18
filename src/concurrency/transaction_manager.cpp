@@ -31,6 +31,9 @@ Transaction *TransactionManager::Begin(Transaction *txn) {
 
   if (enable_logging) {
     // TODO(student): Add logging here.
+    LogRecord log_record(txn->GetTransactionId(), txn->GetPrevLSN(), LogRecordType::BEGIN);
+    const auto lsn = log_manager_->AppendLogRecord(&log_record);
+    txn->SetPrevLSN(lsn);
   }
 
   txn_map[txn->GetTransactionId()] = txn;
@@ -40,13 +43,13 @@ Transaction *TransactionManager::Begin(Transaction *txn) {
 void TransactionManager::Commit(Transaction *txn) {
   txn->SetState(TransactionState::COMMITTED);
 
-  // Perform all deletes before we commit.
+  // Perform all deletes before we commit.  在提交之前执行所有删除。
   auto write_set = txn->GetWriteSet();
   while (!write_set->empty()) {
     auto &item = write_set->back();
     auto table = item.table_;
     if (item.wtype_ == WType::DELETE) {
-      // Note that this also releases the lock when holding the page latch.
+      // Note that this also releases the lock when holding the page latch. 请注意，这也会在持有页锁存器时释放锁。
       table->ApplyDelete(item.rid_, txn);
     }
     write_set->pop_back();
@@ -55,6 +58,9 @@ void TransactionManager::Commit(Transaction *txn) {
 
   if (enable_logging) {
     // TODO(student): add logging here
+    LogRecord log_record(txn->GetTransactionId(), txn->GetPrevLSN(), LogRecordType::COMMIT);
+    const auto lsn = log_manager_->AppendLogRecord(&log_record);
+    txn->SetPrevLSN(lsn);
   }
 
   // Release all the locks.
@@ -66,7 +72,7 @@ void TransactionManager::Commit(Transaction *txn) {
 void TransactionManager::Abort(Transaction *txn) {
   txn->SetState(TransactionState::ABORTED);
 
-  // Rollback before releasing the lock.
+  // Rollback before releasing the lock.  释放锁之前回滚。
   auto write_set = txn->GetWriteSet();
   while (!write_set->empty()) {
     auto &item = write_set->back();
@@ -74,7 +80,7 @@ void TransactionManager::Abort(Transaction *txn) {
     if (item.wtype_ == WType::DELETE) {
       table->RollbackDelete(item.rid_, txn);
     } else if (item.wtype_ == WType::INSERT) {
-      // Note that this also releases the lock when holding the page latch.
+      // Note that this also releas es the lock when holding the page latch.
       table->ApplyDelete(item.rid_, txn);
     } else if (item.wtype_ == WType::UPDATE) {
       table->UpdateTuple(item.tuple_, item.rid_, txn);
@@ -85,6 +91,9 @@ void TransactionManager::Abort(Transaction *txn) {
 
   if (enable_logging) {
     // TODO(student): add logging here
+    LogRecord log_record(txn->GetTransactionId(), txn->GetPrevLSN(), LogRecordType::ABORT);
+    const auto lsn = log_manager_->AppendLogRecord(&log_record);
+    txn->SetPrevLSN(lsn);
   }
 
   // Release all the locks.

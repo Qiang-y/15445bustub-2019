@@ -242,5 +242,8 @@ class BufferPoolManager {
   std::atomic<page_id_t> next_page_id_;
 
   auto GetPageFromDIsk(page_id_t page_id) -> Page*;
+
+  // 检查是否要刷新Log
+  void CheckPageLog(Page* page);
 };
 }  // namespace bustub

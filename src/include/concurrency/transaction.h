@@ -44,7 +44,7 @@ enum class WType { INSERT = 0, DELETE, UPDATE };
 class TableHeap;
 
 /**
- * WriteRecord tracks information related to a write.
+ * WriteRecord tracks information related to a write.  WriteRecord 跟踪与写入相关的信息。
  */
 class WriteRecord {
  public:
@@ -53,9 +53,9 @@ class WriteRecord {
 
   RID rid_;
   WType wtype_;
-  /** The tuple is only used for the update operation. */
+  /** The tuple is only used for the update operation.  元组仅用于更新操作。*/
   Tuple tuple_;
-  /** The table heap specifies which table this write record is for. */
+  /** The table heap specifies which table this write record is for. 表堆指定了这条写记录是针对哪个表的。*/
   TableHeap *table_;
 };
 
@@ -150,17 +150,17 @@ class Transaction {
 
   /** The undo set of the transaction. */
   std::shared_ptr<std::deque<WriteRecord>> write_set_;
-  /** The LSN of the last record written by the transaction. */
+  /** The LSN of the last record written by the transaction. 事务写入的最后一条记录的LSN。*/
   lsn_t prev_lsn_;
 
-  /** Concurrent index: the pages that were latched during index operation. */
+  /** Concurrent index: the pages that were latched during index operation. 并发索引：索引操作期间被锁存的页。*/
   std::shared_ptr<std::deque<Page *>> page_set_;
-  /** Concurrent index: the page IDs that were deleted during index operation.*/
+  /** Concurrent index: the page IDs that were deleted during index operation. 并发索引：索引操作期间删除的页面ID。*/
   std::shared_ptr<std::unordered_set<page_id_t>> deleted_page_set_;
 
-  /** LockManager: the set of shared-locked tuples held by this transaction. */
+  /** LockManager: the set of shared-locked tuples held by this transaction. LockManager：该事务持有的共享锁定元组的集合。*/
   std::shared_ptr<std::unordered_set<RID>> shared_lock_set_;
-  /** LockManager: the set of exclusive-locked tuples held by this transaction. */
+  /** LockManager: the set of exclusive-locked tuples held by this transaction. LockManager：该事务持有的独占锁定元组集合。*/
   std::shared_ptr<std::unordered_set<RID>> exclusive_lock_set_;
 };
 

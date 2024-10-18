@@ -20,6 +20,7 @@ namespace bustub {
 
 /**
  * CheckpointManager creates consistent checkpoints by blocking all other transactions temporarily.
+ * CheckpointManager 通过暂时阻止所有其他事务来创建一致的检查点。
  */
 class CheckpointManager {
  public:

@@ -125,9 +125,11 @@ void DiskManager::ReadPage(page_id_t page_id, char *page_data) {
 /**
  * Write the contents of the log into disk file
  * Only return when sync is done, and only perform sequence write
+ * 将日志内容写入磁盘文件
+ * 仅当同步完成时返回，并且仅执行序列写入
  */
 void DiskManager::WriteLog(char *log_data, int size) {
-  // enforce swap log buffer
+  // enforce swap log buffer 强制交换日志缓冲区
   assert(log_data != buffer_used);
   buffer_used = log_data;
 
@@ -138,12 +140,12 @@ void DiskManager::WriteLog(char *log_data, int size) {
   flush_log_ = true;
 
   if (flush_log_f_ != nullptr) {
-    // used for checking non-blocking flushing
+    // used for checking non-blocking flushing 用于检查非阻塞刷新
     assert(flush_log_f_->wait_for(std::chrono::seconds(10)) == std::future_status::ready);
   }
 
   num_flushes_ += 1;
-  // sequence write
+  // sequence write 顺序写入
   log_io_.write(log_data, size);
 
   // check for I/O error
@@ -151,7 +153,7 @@ void DiskManager::WriteLog(char *log_data, int size) {
     LOG_DEBUG("I/O error while writing log");
     return;
   }
-  // needs to flush to keep disk file in sync
+  // needs to flush to keep disk file in sync 需要刷新以保持磁盘文件同步
   log_io_.flush();
   flush_log_ = false;
 }

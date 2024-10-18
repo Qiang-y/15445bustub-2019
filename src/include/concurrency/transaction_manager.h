@@ -26,6 +26,7 @@ class LockManager;
 
 /**
  * TransactionManager keeps track of all the transactions running in the system.
+ * TransactionManager 跟踪系统中运行的所有事务。
  */
 class TransactionManager {
  public:
@@ -38,6 +39,9 @@ class TransactionManager {
    * Begins a new transaction.
    * @param txn an optional transaction object to be initialized, otherwise a new transaction is created
    * @return an initialized transaction
+   * 开始新的事务。
+   * @param txn 要初始化的可选事务对象，否则将创建一个新交易
+   * @return 初始化的事务
    */
   Transaction *Begin(Transaction *txn = nullptr);
 
@@ -57,7 +61,8 @@ class TransactionManager {
    * Global list of running transactions
    */
 
-  /** The transaction map is a global list of all the running transactions in the system. */
+  /** The transaction map is a global list of all the running transactions in the system.
+   * 事务映射是系统中所有正在运行的事务的全局列表。*/
   static std::unordered_map<txn_id_t, Transaction *> txn_map;
 
   /**
@@ -100,7 +105,7 @@ class TransactionManager {
   LockManager *lock_manager_ __attribute__((__unused__));
   LogManager *log_manager_ __attribute__((__unused__));
 
-  /** The global transaction latch is used for checkpointing. */
+  /** The global transaction latch is used for checkpointing. 全局事务锁存器用于检查点*/
   ReaderWriterLatch global_txn_latch_;
 };
 

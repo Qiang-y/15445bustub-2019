@@ -85,8 +85,10 @@ bool BufferPoolManager::FlushPageImpl(page_id_t page_id) {
   auto frame_id_temp = page_table_it->second;
 
   // 用DiskManager::WritePage() 来写回，
-  if(pages_[frame_id_temp].IsDirty())
+  if(pages_[frame_id_temp].IsDirty()) {
+    CheckPageLog(&pages_[frame_id_temp]);     // 检查page中的log是否要先持久化
     disk_manager_->WritePage(page_id, pages_[frame_id_temp].data_);
+  }
   // 清除脏页标志
   pages_[frame_id_temp].is_dirty_ = false;
 
@@ -106,9 +108,7 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
     frame_id_temp = free_list_.front();
     free_list_.pop_front();
   }
-  /* ??????????????????
-   *  文档说要调用LRUK的etEvictable来固定frame，我不知道这是否等于clock中Pin还是Victim,Victim也会把frame从clock中删除
-   */
+
   else if(replacer_->Victim(&frame_id_temp) == true) {
     // 若页面为脏则先写回
     if(pages_[frame_id_temp].IsDirty()) {
@@ -174,7 +174,7 @@ void BufferPoolManager::FlushAllPagesImpl() {
   // std::lock_guard<std::mutex> lock_guard(latch_);
   for (auto &page_table_it : page_table_) {
     auto frame_id_temp = page_table_it.second;
-
+    CheckPageLog(&pages_[frame_id_temp]);     // 检查page中的log是否要先持久化
     disk_manager_->WritePage(page_table_it.first, pages_[frame_id_temp].data_);
 
     // 清除脏页标志
@@ -182,10 +182,10 @@ void BufferPoolManager::FlushAllPagesImpl() {
   }
 }
 
-auto BufferPoolManager::GetPageFromDIsk(page_id_t page_id)-> Page *{
-  frame_id_t frame_id_temp = -1;   // 记录可用的frame
+auto BufferPoolManager::GetPageFromDIsk(page_id_t page_id) -> Page * {
+  frame_id_t frame_id_temp = -1;  // 记录可用的frame
   // 查找可用的fram_id
-  if(!free_list_.empty()) {
+  if (!free_list_.empty()) {
     frame_id_temp = free_list_.front();
     free_list_.pop_front();
   }
@@ -212,6 +212,14 @@ auto BufferPoolManager::GetPageFromDIsk(page_id_t page_id)-> Page *{
     return &pages_[frame_id_temp];
   }
   return nullptr;
+}
+
+void BufferPoolManager::CheckPageLog(Page *page){
+  if(!enable_logging) return;
+  if(!page->IsDirty())  return;
+  if(page->GetLSN() > log_manager_->GetPersistentLSN()) {
+    log_manager_->Flush();
+  }
 }
 
 }  // namespace bustub

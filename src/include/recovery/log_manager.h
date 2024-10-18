@@ -25,6 +25,8 @@ namespace bustub {
 /**
  * LogManager maintains a separate thread that is awakened whenever the log buffer is full or whenever a timeout
  * happens. When the thread is awakened, the log buffer's content is written into the disk log file.
+ * LogManager维护一个单独的线程，每当日志缓冲区发生已满或超时时，该线程就会被唤醒。
+ * 当线程被唤醒时，日志缓冲区的内容被写入磁盘日志文件。
  */
 class LogManager {
  public:
@@ -51,12 +53,28 @@ class LogManager {
   inline void SetPersistentLSN(lsn_t lsn) { persistent_lsn_ = lsn; }
   inline char *GetLogBuffer() { return log_buffer_; }
 
+  // 强制执行对外使用
+  void Flush();
  private:
   // TODO(students): you may add your own member variables
+  void FlushTask();
+  // 强制执行
+  void Flush(std::unique_lock<std::mutex> &lock);
 
-  /** The atomic counter which records the next log sequence number. */
+  // 标志是否在运行
+  // std::atomic_bool is_running_{false};
+  // std::promise<bool> is_running_;
+  // 页面上目前有的记录位置
+  size_t log_buffer_offset_{0};
+  size_t flush_buffer_offset_{0};
+
+  /** The atomic counter which records the next log sequence number.
+   * 记录下一个日志序列号的原子计数器。
+   */
   std::atomic<lsn_t> next_lsn_;
-  /** The log records before and including the persistent lsn have been written to disk. */
+  /** The log records before and including the persistent lsn have been written to disk.
+   *  persisten_lsn 之前（包括持久 lsn）的日志记录已写入磁盘。
+   */
   std::atomic<lsn_t> persistent_lsn_;
 
   char *log_buffer_;
@@ -67,6 +85,8 @@ class LogManager {
   std::thread *flush_thread_ __attribute__((__unused__));
 
   std::condition_variable cv_;
+
+  std::condition_variable cv_respond_;  // 控制后台线程回复
 
   DiskManager *disk_manager_ __attribute__((__unused__));
 };

@@ -94,7 +94,7 @@ class Tuple {
 
   bool allocated_{false};  // is allocated? 被分配？
   RID rid_{};              // if pointing to the table heap, the rid is valid 如果指向表堆，则rid有效
-  uint32_t size_{0};
+  uint32_t size_{0};      // 只是tuple的大小
   char *data_{nullptr};
 };
 

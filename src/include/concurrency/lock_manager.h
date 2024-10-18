@@ -28,10 +28,10 @@ namespace bustub {
 
 class TransactionManager;
 
-/** Two-Phase Locking mode. */
+/** Two-Phase Locking mode. 常规/严格*/
 enum class TwoPLMode { REGULAR, STRICT };
 
-/** Deadlock mode. */
+/** Deadlock mode. 预防/检测*/
 enum class DeadlockMode { PREVENTION, DETECTION };
 
 /**
@@ -116,6 +116,10 @@ class LockManager {
    * @param txn the transaction requesting the lock upgrade
    * @param rid the RID that should already be locked in shared mode by the requesting transaction
    * @return true if the upgrade is successful, false otherwise
+   * 将锁从共享锁升级为排它锁。
+   * @param txn 请求锁升级的交易
+   * @param 删除应该已经被请求事务以共享模式锁定的 RID
+   * @return true 如果升级成功, false 否则
    */
   bool LockUpgrade(Transaction *txn, const RID &rid);
 
@@ -159,7 +163,7 @@ class LockManager {
   bool Prevention() { return deadlock_mode_ == DeadlockMode::PREVENTION; }
 
   std::mutex latch_;
-  std::atomic<bool> enable_cycle_detection_;
+  std::atomic<bool> enable_cycle_detection_; // 启用周期检测
   std::thread *cycle_detection_thread_;
 
   /** Lock table for lock requests. */
