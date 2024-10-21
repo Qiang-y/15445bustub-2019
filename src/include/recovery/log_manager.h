@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <common/logger.h>
+
 #include <algorithm>
 #include <condition_variable>  // NOLINT
 #include <future>              // NOLINT
@@ -37,10 +39,12 @@ class LogManager {
   }
 
   ~LogManager() {
+    LOG_INFO("begin end logmanager");
     delete[] log_buffer_;
     delete[] flush_buffer_;
     log_buffer_ = nullptr;
     flush_buffer_ = nullptr;
+    std::cout <<" end logmanager" << std::endl;
   }
 
   void RunFlushThread();
@@ -61,9 +65,8 @@ class LogManager {
   // 强制执行
   void Flush(std::unique_lock<std::mutex> &lock);
 
-  // 标志是否在运行
-  // std::atomic_bool is_running_{false};
-  // std::promise<bool> is_running_;
+  // 标志是否要flush
+  std::atomic_bool need_flush_{false};
   // 页面上目前有的记录位置
   size_t log_buffer_offset_{0};
   size_t flush_buffer_offset_{0};

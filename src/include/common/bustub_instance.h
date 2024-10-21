@@ -44,6 +44,7 @@ class BustubInstance {
 
   ~BustubInstance() {
     if (enable_logging) {
+      LOG_INFO("begin stopflushthread");
       log_manager_->StopFlushThread();
     }
     delete checkpoint_manager_;

@@ -42,6 +42,15 @@ class LogRecovery {
   bool DeserializeLogRecord(const char *data, LogRecord *log_record);
 
  private:
+  void RedoInsert(LogRecord &record);
+  void RedoMarkDelete(LogRecord &record);
+  void RedoApplyDelete(LogRecord &record);
+  void RedoRollbackDelete(LogRecord &record);
+  void RedoUpdate(LogRecord &record);
+  void RedoCommitAbort(LogRecord &record);
+  void RedoNewPage(LogRecord &record);
+
+
   DiskManager *disk_manager_ __attribute__((__unused__));
   BufferPoolManager *buffer_pool_manager_ __attribute__((__unused__));
 

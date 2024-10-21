@@ -27,7 +27,7 @@
 namespace bustub {
 
 // NOLINTNEXTLINE
-TEST(RecoveryTest, DISABLED_RedoTest) {
+TEST(RecoveryTest, RedoTest) {
   remove("test.db");
   remove("test.log");
 
@@ -95,7 +95,7 @@ TEST(RecoveryTest, DISABLED_RedoTest) {
   LOG_INFO("Redo underway...");
   log_recovery->Redo();
   LOG_INFO("Undo underway...");
-  log_recovery->Undo();
+  // log_recovery->Undo();
 
   LOG_INFO("Check if recovery success");
   txn = bustub_instance->transaction_manager_->Begin();

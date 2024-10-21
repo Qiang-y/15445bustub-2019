@@ -12,6 +12,8 @@
 
 #include "recovery/log_manager.h"
 
+#include <common/logger.h>
+
 namespace bustub {
 /*
  * set enable_logging = true
@@ -31,7 +33,8 @@ void LogManager::RunFlushThread() {
   if (enable_logging) return;
   enable_logging = true;
 
-  flush_thread_ = new std::thread(&LogManager::FlushTask, this);    // 在这里新线程就开始执行了（thread构造函数新建即执行）
+  flush_thread_ =
+      new std::thread(&LogManager::FlushTask, this);  // 在这里新线程就开始执行了（thread构造函数新建即执行）
   // flush_thread_->detach();
 }
 
@@ -40,8 +43,13 @@ void LogManager::FlushTask() {
   while (enable_logging) {
     // 获取latch所有权，休眠等待条件满足被重新唤醒，休眠时释放latch
     std::unique_lock<std::mutex> lock(this->latch_);
-    cv_.wait_for(lock, std::chrono::seconds(log_timeout));
-    // 当条件满足时线程唤醒重新取得latch所有权
+    cv_.wait_for(lock, std::chrono::seconds(log_timeout), [&] { return need_flush_.load(); });
+    if (!enable_logging) {
+      LOG_INFO("enable_logging is false");
+      need_flush_ = false;
+      cv_respond_.notify_all();
+      return;
+    }  // 当条件满足时线程唤醒重新取得latch所有权
     // 判断是否有新log被写入
     if (log_buffer_offset_ > 0) {
       // 交换两个buff
@@ -49,22 +57,24 @@ void LogManager::FlushTask() {
       std::swap(flush_buffer_offset_, log_buffer_offset_);
       disk_manager_->WriteLog(flush_buffer_, flush_buffer_offset_);
       flush_buffer_offset_ = 0;
-      SetPersistentLSN(next_lsn_-1);
+      SetPersistentLSN(next_lsn_ - 1);
       // is_running_.set_value(false);
     }
+    need_flush_ = false;
     cv_respond_.notify_all();
   }
 }
 
-void LogManager::Flush(){
+void LogManager::Flush() {
   std::unique_lock<std::mutex> lock(latch_);
   Flush(lock);
 }
 
 // 唤醒后台进程
 void LogManager::Flush(std::unique_lock<std::mutex> &lock) {
+  need_flush_ = true;
   cv_.notify_one();
-  cv_respond_.wait(lock, [&] { return log_buffer_offset_ == 0; });
+  cv_respond_.wait(lock, [&] { return !need_flush_.load(); });
 }
 
 /*
@@ -73,8 +83,12 @@ void LogManager::Flush(std::unique_lock<std::mutex> &lock) {
 void LogManager::StopFlushThread() {
   std::unique_lock<std::mutex> lock(latch_);
   enable_logging = false;
-  cv_.notify_one();
-  flush_thread_->join();    // 阻塞当前线程直到join的线程返回
+  Flush(lock);
+  LOG_INFO("end last Flush");
+  // lock.unlock();
+  flush_thread_->join();  // 阻塞当前线程直到join的线程返回
+  // lock.lock();
+  LOG_INFO("end join");
   delete flush_thread_;
   flush_thread_ = nullptr;
 }
@@ -126,11 +140,11 @@ lsn_t LogManager::AppendLogRecord(LogRecord *log_record) {
   int pos = log_buffer_offset_ + bustub::LogRecord::HEADER_SIZE;
 
   // 根据log类型不同写入不同的log
-  switch(log_record->GetLogRecordType()) {
+  switch (log_record->GetLogRecordType()) {
     case LogRecordType::MARKDELETE:
     case LogRecordType::APPLYDELETE:
     case LogRecordType::ROLLBACKDELETE: {
-      memcpy(log_buffer_+pos, &log_record->delete_rid_, sizeof(RID));
+      memcpy(log_buffer_ + pos, &log_record->delete_rid_, sizeof(RID));
       pos += sizeof(RID);
       log_record->delete_tuple_.SerializeTo(log_buffer_ + pos);
       break;
@@ -142,7 +156,7 @@ lsn_t LogManager::AppendLogRecord(LogRecord *log_record) {
       break;
     }
     case LogRecordType::UPDATE: {
-      memcpy(log_buffer_+pos, &log_record->update_rid_, sizeof(RID));
+      memcpy(log_buffer_ + pos, &log_record->update_rid_, sizeof(RID));
       pos += sizeof(RID);
       log_record->old_tuple_.SerializeTo(log_buffer_ + pos);
       pos = pos + 4 + log_record->old_tuple_.GetLength();
