@@ -45,18 +45,31 @@ void LogManager::FlushTask() {
     std::unique_lock<std::mutex> lock(this->latch_);
     cv_.wait_for(lock, std::chrono::seconds(log_timeout), [&] { return need_flush_.load(); });
     if (!enable_logging) {
-      LOG_INFO("enable_logging is false");
+      LOG_DEBUG("enable_logging is false");
       need_flush_ = false;
       cv_respond_.notify_all();
       return;
     }  // 当条件满足时线程唤醒重新取得latch所有权
     // 判断是否有新log被写入
+    LOG_DEBUG("Write log");
+
     if (log_buffer_offset_ > 0) {
       // 交换两个buff
       std::swap(flush_buffer_, log_buffer_);
       std::swap(flush_buffer_offset_, log_buffer_offset_);
+      // LOG_DEBUG("Write log");
+
+      LOG_WARN("size before write: %d", *reinterpret_cast<int32_t*>(flush_buffer_));
+
       disk_manager_->WriteLog(flush_buffer_, flush_buffer_offset_);
+
+      char buffer[PAGE_SIZE];
+      disk_manager_->ReadLog(buffer, PAGE_SIZE, 0);
+      int32_t size = *reinterpret_cast<int32_t *>(buffer);
+      LOG_WARN("size after write: %d", size);
+
       flush_buffer_offset_ = 0;
+      memset(flush_buffer_, 0, LOG_BUFFER_SIZE);
       SetPersistentLSN(next_lsn_ - 1);
       // is_running_.set_value(false);
     }
@@ -82,6 +95,7 @@ void LogManager::Flush(std::unique_lock<std::mutex> &lock) {
  */
 void LogManager::StopFlushThread() {
   std::unique_lock<std::mutex> lock(latch_);
+  Flush(lock);
   enable_logging = false;
   Flush(lock);
   LOG_INFO("end last Flush");
@@ -136,9 +150,9 @@ lsn_t LogManager::AppendLogRecord(LogRecord *log_record) {
   }
   log_record->lsn_ = next_lsn_++;
   // 写入头部信息
-  memcpy(log_buffer_ + log_buffer_offset_, &log_record, bustub::LogRecord::HEADER_SIZE);
+  memcpy(log_buffer_ + log_buffer_offset_, log_record, bustub::LogRecord::HEADER_SIZE);
   int pos = log_buffer_offset_ + bustub::LogRecord::HEADER_SIZE;
-
+  std::cout << log_record->ToString() << std::endl;
   // 根据log类型不同写入不同的log
   switch (log_record->GetLogRecordType()) {
     case LogRecordType::MARKDELETE:

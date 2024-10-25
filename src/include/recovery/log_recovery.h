@@ -49,6 +49,10 @@ class LogRecovery {
   void RedoUpdate(LogRecord &record);
   void RedoCommitAbort(LogRecord &record);
   void RedoNewPage(LogRecord &record);
+  void UndoInsert(const LogRecord &record);
+  void UndoMarkDelete(const LogRecord &record);
+  void UndoUpdate(LogRecord &record);
+  void UndoNewPage(const LogRecord & record);
 
 
   DiskManager *disk_manager_ __attribute__((__unused__));

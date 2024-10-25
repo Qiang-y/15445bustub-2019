@@ -79,6 +79,7 @@ bool TablePage::InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn, Lock
     LogRecord log_record(txn->GetTransactionId(), txn->GetPrevLSN(), LogRecordType::INSERT, *rid, tuple);
     lsn_t lsn = log_manager->AppendLogRecord(&log_record);
     SetLSN(lsn);
+    // std::cout << log_record.ToString() << std::endl;   // DEBUG
     txn->SetPrevLSN(lsn);
   }
   return true;

@@ -95,7 +95,7 @@ TEST(RecoveryTest, RedoTest) {
   LOG_INFO("Redo underway...");
   log_recovery->Redo();
   LOG_INFO("Undo underway...");
-  // log_recovery->Undo();
+  log_recovery->Undo();
 
   LOG_INFO("Check if recovery success");
   txn = bustub_instance->transaction_manager_->Begin();
@@ -118,11 +118,11 @@ TEST(RecoveryTest, RedoTest) {
   delete bustub_instance;
   LOG_INFO("Tearing down the system..");
   remove("test.db");
-  remove("test.log");
+  // remove("test.log");
 }
 
 // NOLINTNEXTLINE
-TEST(RecoveryTest, DISABLED_UndoTest) {
+TEST(RecoveryTest, UndoTest) {
   remove("test.db");
   remove("test.log");
   BustubInstance *bustub_instance = new BustubInstance("test.db");

@@ -19,7 +19,7 @@ set(VALGRIND_OPTIONS
         --soname-synonyms=somalloc=*jemalloc*   # also intercept jemalloc
         --trace-children=yes                    # trace child processes
         --track-origins=yes                     # track origin of uninitialized values
-        )
+)
 set(VALGRIND_SUPPRESSIONS_FILE "${PROJECT_SOURCE_DIR}/build_support/valgrind.supp")
 
 ######################################################################################################################
@@ -41,8 +41,7 @@ foreach (bustub_test_source ${BUSTUB_TEST_SOURCES})
     string(REPLACE ".cpp" "" bustub_test_name ${bustub_test_filename})
 
     # Add the test target separately and as part of "make check-tests".
-    add_executable(${bustub_test_name} EXCLUDE_FROM_ALL ${bustub_test_source}
-            container/hash_table_page_test.cpp)
+    add_executable(${bustub_test_name} EXCLUDE_FROM_ALL ${bustub_test_source})
     add_dependencies(build-tests ${bustub_test_name})
     add_dependencies(check-tests ${bustub_test_name})
 
@@ -50,15 +49,15 @@ foreach (bustub_test_source ${BUSTUB_TEST_SOURCES})
 
     # Set test target properties and dependencies.
     set_target_properties(${bustub_test_name}
-        PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
-        COMMAND ${bustub_test_name}
+            PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+            COMMAND ${bustub_test_name}
     )
 
     # Add the test under CTest.
     add_test(${bustub_test_name} ${VALGRIND_BIN} ${VALGRIND_OPTIONS}
-    --suppressions=${VALGRIND_SUPPRESSIONS_FILE} ${CMAKE_BINARY_DIR}/test/${bustub_test_name}
-    --gtest_color=yes --gtest_output=xml:${CMAKE_BINARY_DIR}/test/unit_${test_name}.xml)
+            --suppressions=${VALGRIND_SUPPRESSIONS_FILE} ${CMAKE_BINARY_DIR}/test/${bustub_test_name}
+            --gtest_color=yes --gtest_output=xml:${CMAKE_BINARY_DIR}/test/unit_${test_name}.xml)
     add_test(${bustub_test_name} ${CMAKE_BINARY_DIR}/test/${bustub_test_name} --gtest_color=yes
             --gtest_output=xml:${CMAKE_BINARY_DIR}/test/${bustub_test_name}.xml)
 endforeach(bustub_test_source ${BUSTUB_TEST_SOURCES})

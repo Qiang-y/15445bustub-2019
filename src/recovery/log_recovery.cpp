@@ -21,9 +21,12 @@ namespace bustub {
  * incomplete log record
  */
 bool LogRecovery::DeserializeLogRecord(const char *data, LogRecord *log_record) {
+  LOG_DEBUG("!!!!:");
+  std::cout << *data << std::endl;
   auto src_record = reinterpret_cast<const LogRecord *>(data);
-
-  if (data + src_record->size_ > log_buffer_ + LOG_BUFFER_SIZE || src_record->size_ < 20) {
+  std::cout << reinterpret_cast<const LogRecord*>(data)->ToString() << std::endl;
+  // LOG_DEBUG("1 = %s, 2 = %s", (data + src_record->size_), (log_buffer_ + LOG_BUFFER_SIZE));
+  if (src_record->size_ < 20) {
     return false;
   }
 
@@ -62,9 +65,6 @@ bool LogRecovery::DeserializeLogRecord(const char *data, LogRecord *log_record) 
       memcpy(&log_record->page_id_, data + pos, sizeof(page_id_t));
       break;
     }
-    case LogRecordType::INVALID: {
-      return false;
-    }
     default:
       break;
   }
@@ -84,16 +84,20 @@ bool LogRecovery::DeserializeLogRecord(const char *data, LogRecord *log_record) 
  *lsn_mapping_表
  */
 void LogRecovery::Redo() {
-  offset_ = 0;
+  LOG_DEBUG("REDO BEGIN");
+  // offset_ = 0;
   while (disk_manager_->ReadLog(log_buffer_, LOG_BUFFER_SIZE, offset_)) {
     int buffer_offset{0};
     LogRecord record;
+
     while (DeserializeLogRecord(log_buffer_ + buffer_offset, &record)) {
-      // 添加lsn位置映射
-      lsn_mapping_[record.GetLSN()] = offset_ + buffer_offset;
       // 添加ATT
       active_txn_[record.GetTxnId()] = record.GetLSN();
       buffer_offset += record.GetSize();
+      // 添加lsn位置映射
+      lsn_mapping_[record.GetLSN()] = offset_;
+
+      offset_ += record.GetSize();
       switch (record.GetLogRecordType()) {
         case LogRecordType::INSERT: {
           RedoInsert(record);
@@ -124,10 +128,11 @@ void LogRecovery::Redo() {
           RedoNewPage(record);
           break;
         }
-        default:  break;
+        default:
+          break;
       }
     }
-    offset_ += buffer_offset;
+    break;
   }
 }
 
@@ -135,15 +140,50 @@ void LogRecovery::Redo() {
  *undo phase on TABLE PAGE level(table/table_page.h)
  *iterate through active txn map and undo each operation
  */
-void LogRecovery::Undo() {}
+void LogRecovery::Undo() {
+  for (auto ATT_it : active_txn_) {
+    auto lsn = ATT_it.second;
+    LogRecord record(INVALID, INVALID, LogRecordType::ABORT);
+    while (lsn != INVALID) {
+      disk_manager_->ReadLog(log_buffer_, LOG_BUFFER_SIZE, lsn_mapping_[lsn]);
+      DeserializeLogRecord(log_buffer_, &record);
+      auto record_type = record.GetLogRecordType();
+      if (record_type == LogRecordType::BEGIN) {
+        break;
+      }
+      switch (record_type) {
+        case LogRecordType::INSERT: {
+          UndoInsert(record);
+          break;
+        }
+        case LogRecordType::MARKDELETE: {
+          UndoMarkDelete(record);
+          break;
+        }
+        case LogRecordType::UPDATE: {
+          UndoUpdate(record);
+          break;
+        }
+        case LogRecordType::NEWPAGE: {
+          UndoNewPage(record);
+          break;
+        }
+        default:
+          break;
+      }
+
+      lsn = record.GetPrevLSN();
+    }
+  }
+}
 
 void LogRecovery::RedoInsert(LogRecord &record) {
   RID rid = record.GetInsertRID();
   page_id_t page_id = rid.GetPageId();
-  TablePage * page =reinterpret_cast<TablePage*>(buffer_pool_manager_->FetchPage(page_id));
+  TablePage *page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(page_id));
   bool is_dirty{false};
   // 依据page上的最后一次lsn和日记中的lsn比较查看日志之前是否成功
-  if(page->GetLSN() < record.GetLSN()) {
+  if (page->GetLSN() < record.GetLSN()) {
     is_dirty = true;
     page->WLatch();
     page->InsertTuple(record.insert_tuple_, &record.insert_rid_, nullptr, nullptr, nullptr);
@@ -155,25 +195,24 @@ void LogRecovery::RedoInsert(LogRecord &record) {
 void LogRecovery::RedoMarkDelete(LogRecord &record) {
   RID rid = record.GetDeleteRID();
   page_id_t page_id = rid.GetPageId();
-  TablePage * page =reinterpret_cast<TablePage*>(buffer_pool_manager_->FetchPage(page_id));
+  TablePage *page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(page_id));
   bool is_dirty{false};
   // 依据page上的最后一次lsn和日记中的lsn比较查看日志之前是否成功
-  if(page->GetLSN() < record.GetLSN()) {
+  if (page->GetLSN() < record.GetLSN()) {
     is_dirty = true;
     page->WLatch();
     page->MarkDelete(rid, nullptr, nullptr, nullptr);
     page->WUnlatch();
   }
   buffer_pool_manager_->UnpinPage(page_id, is_dirty);
-
 }
 void LogRecovery::RedoApplyDelete(LogRecord &record) {
   RID rid = record.GetDeleteRID();
   page_id_t page_id = rid.GetPageId();
-  TablePage * page =reinterpret_cast<TablePage*>(buffer_pool_manager_->FetchPage(page_id));
+  TablePage *page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(page_id));
   bool is_dirty{false};
   // 依据page上的最后一次lsn和日记中的lsn比较查看日志之前是否成功
-  if(page->GetLSN() < record.GetLSN()) {
+  if (page->GetLSN() < record.GetLSN()) {
     is_dirty = true;
     page->WLatch();
     page->ApplyDelete(rid, nullptr, nullptr);
@@ -184,10 +223,10 @@ void LogRecovery::RedoApplyDelete(LogRecord &record) {
 void LogRecovery::RedoRollbackDelete(LogRecord &record) {
   RID rid = record.GetDeleteRID();
   page_id_t page_id = rid.GetPageId();
-  TablePage * page =reinterpret_cast<TablePage*>(buffer_pool_manager_->FetchPage(page_id));
+  TablePage *page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(page_id));
   bool is_dirty{false};
   // 依据page上的最后一次lsn和日记中的lsn比较查看日志之前是否成功
-  if(page->GetLSN() < record.GetLSN()) {
+  if (page->GetLSN() < record.GetLSN()) {
     is_dirty = true;
     page->WLatch();
     page->RollbackDelete(rid, nullptr, nullptr);
@@ -198,10 +237,10 @@ void LogRecovery::RedoRollbackDelete(LogRecord &record) {
 void LogRecovery::RedoUpdate(LogRecord &record) {
   RID rid = record.GetDeleteRID();
   page_id_t page_id = rid.GetPageId();
-  TablePage * page =reinterpret_cast<TablePage*>(buffer_pool_manager_->FetchPage(page_id));
+  TablePage *page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(page_id));
   bool is_dirty{false};
   // 依据page上的最后一次lsn和日记中的lsn比较查看日志之前是否成功
-  if(page->GetLSN() < record.GetLSN()) {
+  if (page->GetLSN() < record.GetLSN()) {
     is_dirty = true;
     page->WLatch();
     page->UpdateTuple(record.new_tuple_, &record.old_tuple_, rid, nullptr, nullptr, nullptr);
@@ -209,24 +248,22 @@ void LogRecovery::RedoUpdate(LogRecord &record) {
   }
   buffer_pool_manager_->UnpinPage(page_id, is_dirty);
 }
-void LogRecovery::RedoCommitAbort(LogRecord &record) {
-  active_txn_.erase(record.GetTxnId());
-}
+void LogRecovery::RedoCommitAbort(LogRecord &record) { active_txn_.erase(record.GetTxnId()); }
 void LogRecovery::RedoNewPage(LogRecord &record) {
   page_id_t new_page_id = record.page_id_;
   page_id_t prev_page_id = record.prev_page_id_;
-  auto page =reinterpret_cast<TablePage*>(buffer_pool_manager_->FetchPage(new_page_id));
+  auto page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(new_page_id));
   bool is_dirty{false};
   // 依据page上的最后一次lsn和日记中的lsn比较查看日志之前是否成功
-  if(page->GetLSN() < record.GetLSN()) {
+  if (page->GetLSN() < record.GetLSN()) {
     is_dirty = true;
     page->WLatch();
     page->Init(new_page_id, PAGE_SIZE, prev_page_id, nullptr, nullptr);
     page->WUnlatch();
 
     // 修改上个页面
-    if(prev_page_id != INVALID_PAGE_ID) {
-      auto prev_page =reinterpret_cast<TablePage*>(buffer_pool_manager_->FetchPage(prev_page_id));
+    if (prev_page_id != INVALID_PAGE_ID) {
+      auto prev_page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(prev_page_id));
       prev_page->WLatch();
       prev_page->SetNextPageId(new_page_id);
       prev_page->WUnlatch();
@@ -234,6 +271,39 @@ void LogRecovery::RedoNewPage(LogRecord &record) {
     }
   }
   buffer_pool_manager_->UnpinPage(new_page_id, is_dirty);
+}
+void LogRecovery::UndoInsert(const LogRecord &record) {
+  const auto rid = record.insert_rid_;
+  const auto page_id = rid.GetPageId();
+  auto page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(page_id));
+  page->WLatch();
+  page->ApplyDelete(rid, nullptr, nullptr);
+  page->WUnlatch();
+  buffer_pool_manager_->UnpinPage(page_id, true);
+}
+void LogRecovery::UndoMarkDelete(const LogRecord &record) {
+  const auto rid = record.delete_rid_;
+  const auto page_id = rid.GetPageId();
+  auto page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(page_id));
+  page->WLatch();
+  page->RollbackDelete(rid, nullptr, nullptr);
+  page->WUnlatch();
+  buffer_pool_manager_->UnpinPage(page_id, true);
+}
+void LogRecovery::UndoUpdate(LogRecord &record) {
+  const auto rid = record.update_rid_;
+  const auto page_id = rid.GetPageId();
+  auto page = reinterpret_cast<TablePage*>(buffer_pool_manager_->FetchPage(page_id));
+  page->WLatch();
+  page->UpdateTuple(record.old_tuple_ , &record.new_tuple_, rid, nullptr, nullptr, nullptr);
+  page->WUnlatch();
+  buffer_pool_manager_->UnpinPage(page_id, true);
+}
+
+// do nothing
+void LogRecovery::UndoNewPage(const LogRecord &record){
+  // const auto page_id = record.page_id_;
+  // buffer_pool_manager_->DeletePage(page_id);
 }
 
 }  // namespace bustub
